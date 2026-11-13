@@ -19,6 +19,8 @@ Pick a variable, pick a place, and find out what is changing, where, by how much
 
 </div>
 
+## Live Link: https://earthlens-observatory.ababil-cox-8536.chatgpt.site/#explore
+
 ---
 
 ## The challenge
