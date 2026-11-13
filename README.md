@@ -1,33 +1,172 @@
-# EarthLens — Earth Intelligence
+<div align="center">
 
-A private NASA environmental-trend application with a Vinext server, refreshable official data sources, and browser-side statistical analysis. The full interface uses an original EarthLens identity, uniform SVG icons, light research cards, responsive horizontal navigation, and consistent report styling.
+<img src="public/favicon.svg" width="96" alt="EarthLens logo" />
 
-## Data and refresh
+# EarthLens
 
-- NASA POWER / MERRA-2: air temperature at 2 m (°C), corrected mean daily precipitation (mm/day), relative humidity at 2 m (%), and wind at 10 m (m/s). The bundled download has 16 sampled coordinates with complete annual observations for 1981–2025.
-- NASA GISTEMP v4: annual land–ocean anomalies in eight latitude bands, 1880–2025 in the bundled source, relative to 1951–1980.
-- All built-in scientific values are actual NASA downloads. POWER values are model grid-cell samples; GISTEMP values are NASA analysis averages. Labels such as Central Amazon identify a sampled coordinate, not a whole-region average. Natural Earth geometry provides public-domain cartographic context.
-- `GET /api/nasa/power?lat=23.8&lon=90.4` fetches a fixed official NASA POWER endpoint. `GET /api/nasa/gistemp` fetches the official NASA GISS table. No key or arbitrary proxy URL is accepted. End years are limited to the previous UTC calendar year, and each year must be complete. NASA publication delays can result in an earlier latest year.
-- Refresh runs on opening a study and every 30 minutes while its browser tab is visible and Auto is enabled. Normal refresh can reuse a validated six-hour server cache. When the host denies shared cache access, a bounded cache in the server instance is used; it is ephemeral and a cache miss retrieves NASA directly. **Refresh NASA data** adds `refresh=1`, requests NASA directly, and bypasses that cache.
-- Every source exposes its last successful fetch date, annual coverage, progress, and errors. Cached responses retain their original fetch timestamp. Partial or total NASA failures retain existing real records and are visibly labeled. The app does not claim real-time conditions.
-- Add NASA location retrieves all four variables at entered coordinates (rounded to two decimals), with at most 40 study points. Saving a workspace preserves coordinate requests. Opening a project retrieves their NASA data; a device cache can restore previously validated records immediately.
-- Source snapshots in `public/assets` provide an initial usable dataset. `data.json` and `gistemp-meta.json` record retrieval times and provenance; `power-*.json` and `gistemp-zonal.csv` preserve the downloaded NASA responses. `fetch_data.py` reproducibly refreshes both scientific snapshots. It does not alter Natural Earth geometry.
+### Real data. Meaningful change.
 
-## Analysis and workspaces
+**An Earth-system trend detective built on NASA open data.**
+Pick a variable, pick a place, and find out what is changing, where, by how much, and whether the change is statistically significant.
 
-The observatory includes a world trend map and table, location search/sorting, adjustable intervals, confidence thresholds, four-location comparisons with a common baseline, raw observation tables, provenance, and methods explanations. Available methods are linear trend with Newey–West HAC uncertainty (default), ordinary OLS with Student's t inference, and tie-corrected Mann–Kendall with Sen's slope. Benjamini–Hochberg q-values are computed across all eligible locations for the selected variable and interval.
+[![NASA Space Apps 2026](https://img.shields.io/badge/NASA%20Space%20Apps-2026-6251ce)](https://www.spaceappschallenge.org/2026/challenges/earth-system-trend-detective/)
+[![Data: NASA POWER](https://img.shields.io/badge/data-NASA%20POWER%20%2F%20MERRA--2-299b85)](https://power.larc.nasa.gov/)
+[![Data: GISTEMP v4](https://img.shields.io/badge/data-NASA%20GISTEMP%20v4-4186a9)](https://data.giss.nasa.gov/gistemp/)
+[![Node 22+](https://img.shields.io/badge/node-%E2%89%A5%2022.13-bc7944)](https://nodejs.org)
+![No API key](https://img.shields.io/badge/API%20key-not%20required-232635)
 
-Annual CSV import remains explicitly **user supplied and not independently verified**. Imports are processed locally, with quoting, duplicate, fill-value, coordinate, minimum-length, and spreadsheet formula-injection checks. Save workspace persists settings and imports on this browser/device; portable JSON projects, results CSV, observations CSV, vector charts, and standalone HTML reports are downloadable. There is no account-synchronized research database or closed-tab background update job.
+<img src="docs/observatory.png" alt="The EarthLens observatory" width="900" />
 
-## Statistics and limits
+</div>
 
-The centered linear fit is `y = mean(y) + slope × (year − mean(year))`. HAC uses Bartlett-weighted lagged score products, lag `floor(4(n/100)^(2/9))`, and scaling `n/(n−2)`. Two-sided p-values and pointwise mean-trend intervals use a normal approximation. OLS uses t with n−2 degrees of freedom. Location slope confidence limits are unadjusted; significant map markers require BH q ≤ α. Sen slopes have no supplied confidence interval. At least eight annual observations are required. Missing years are never interpolated; HAC lag positions follow successive valid observations and calendar gaps generate a caution. Spatial/temporal dependence can affect inference. Significance does not establish causality, practical importance, or future change.
+---
 
-## Build and verification
+## The challenge
 
-Keep the supplied Sites Vite/worker integration and manifest. Use the Sites installation/build helpers for this environment. `public` contains frontend assets, `frontend/index.html` is the server root HTML source, `app/api/nasa` exposes server routes, and `server/nasa.mjs` validates/caches upstream responses. Keep the two HTML source files synchronized when editing the interface.
+> *"Your challenge is to create a tool that can select variables measured by Earth science missions or produced by Earth science models, visualize how they change over time, and determine what is changing, where it is changing, how much it is changing, and if these changes are what scientists call 'significant'."*
+> — NASA Space Apps Challenge 2026, **Be an Earth System Trend Detective!**
 
-Regression checks:
+EarthLens answers all four questions in one screen.
+
+| The challenge asks | EarthLens answers with |
+| --- | --- |
+| **What** is changing? | Five variables: air temperature, precipitation, humidity, wind speed and the GISTEMP surface-temperature anomaly |
+| **Where** is it changing? | A world atlas of 16 sampled coordinates and 8 latitude bands, plus any coordinate you add |
+| **How much**? | Rate per decade and fitted change over the period you choose |
+| Is it **significant**? | Three trend tests, confidence intervals, and false-discovery-rate correction |
+
+## What it found
+
+Air temperature at 2 m, 1981 to 2025, at the 16 bundled NASA POWER grid points:
+
+| | |
+| --- | --- |
+| Locations trending warmer | **15 of 16** |
+| Locations with a significant trend after FDR correction | **13 of 16** |
+| Fastest warming | Central Europe and Central Greenland, **+0.52 °C per decade** |
+| The exception | Dhaka, **−0.23 °C per decade** (95% interval −0.35 to −0.12) |
+
+One variable, one planet, opposite directions. That is exactly the puzzle the challenge describes.
+
+> These are single model grid cells, not regional averages. "Dhaka" means the MERRA-2 cell at 23.8° N, 90.4° E.
+
+## Demo video
+
+https://github.com/user-attachments/assets/REPLACE-AFTER-UPLOAD
+
+<sub>To show the video here, open this README in GitHub's editor, drag `EarthLens-showcase.mp4` into it, and replace the line above with the link GitHub generates.</sub>
+
+## Features
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### Planetary change atlas
+Every location is a marker. Colour shows direction, size shows magnitude, and a filled marker means the trend is significant.
+
+<img src="docs/atlas.png" alt="Planetary change atlas" />
+
+</td>
+<td width="50%" valign="top">
+
+### Time series with uncertainty
+Annual values, the fitted trend, and a 95% confidence band for the mean trend.
+
+<img src="docs/chart.png" alt="Annual observations chart" />
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### A verdict in plain language
+Direction, rate, interval, p-value and residual autocorrelation, written so a student can read it.
+
+<img src="docs/evidence.png" alt="What the evidence says" />
+
+</td>
+<td width="50%" valign="top">
+
+### And more
+- **Compare** up to four locations on a common baseline
+- **Add any coordinate** and fetch its NASA record live (up to 40 study points)
+- **Import your own annual CSV**, clearly labelled as user supplied
+- **Export** results, observations, vector charts and a standalone HTML report
+- **Save a workspace** on your device or as a portable project file
+- **Methodology page** that explains every test and its limits
+
+</td>
+</tr>
+</table>
+
+## The data is real
+
+Every built-in value is an actual NASA download. Nothing is simulated.
+
+| Source | What it provides | Coverage | Endpoint |
+| --- | --- | --- | --- |
+| **NASA POWER** (MERRA-2 reanalysis) | Air temperature at 2 m, corrected precipitation, relative humidity at 2 m, wind speed at 10 m | 1981–2025, 16 coordinates | `power.larc.nasa.gov/api/temporal/monthly/point` |
+| **NASA GISTEMP v4** | Land–ocean temperature anomalies relative to 1951–1980 | 1880–2025, 8 latitude bands | `data.giss.nasa.gov/gistemp/tabledata_v4/ZonAnn.Ts+dSST.csv` |
+| Natural Earth | Country outlines for the map only | — | Public domain |
+
+- **No API key** is needed.
+- **Complete years only.** A year counts only if all twelve months are present.
+- **Live refresh.** The app re-checks NASA when a study opens and every 30 minutes while the tab is visible. A manual refresh bypasses the cache.
+- **Honest failure.** If NASA is unreachable, the app keeps the last validated records and says so.
+- **Reproducible snapshots.** `python fetch_data.py` re-downloads both bundled datasets.
+
+The raw NASA responses are kept in [`public/assets`](public/assets) so anyone can audit them.
+
+## The statistics
+
+| Method | What it does |
+| --- | --- |
+| **Linear trend, HAC robust** (default) | OLS slope with Newey–West standard errors, so year-to-year autocorrelation does not inflate confidence |
+| **Linear trend, ordinary OLS** | Classic Student's t-test with n − 2 degrees of freedom |
+| **Mann–Kendall + Sen's slope** | Rank-based test for monotonic change, with tie correction |
+| **Benjamini–Hochberg FDR** | Adjusts for testing many locations at once. "Significant" means q ≤ α, not just p ≤ α |
+
+Guard rails: at least eight annual values are required, missing years are never interpolated, and significance is never presented as proof of cause.
+
+## How it works
+
+```mermaid
+flowchart LR
+    A[NASA POWER API] --> S
+    B[NASA GISTEMP v4 CSV] --> S
+    S["server/nasa.mjs<br/>validate units, complete years,<br/>6-hour cache"] --> R["/api/nasa/power<br/>/api/nasa/gistemp"]
+    R --> F["Browser<br/>feeds.js"]
+    P["public/assets<br/>bundled NASA snapshots"] --> F
+    F --> T["stats.js<br/>HAC · OLS · Mann–Kendall · FDR"]
+    T --> U["app.js<br/>atlas, charts, verdicts, exports"]
+```
+
+Trends are computed in your browser. The server only fetches, validates and caches NASA responses, and it accepts no arbitrary URL.
+
+## Quick start
+
+Requirements: **Node.js 22.13+** and **pnpm**. An internet connection is needed for live NASA refresh.
+
+```sh
+git clone <your-repo-url>
+cd Nasa-Space-App-Challenge-Preli
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+Open `http://localhost:5173`.
+
+To build and run the compiled app:
+
+```sh
+pnpm build
+pnpm start
+```
+
+> This is a Vinext / Cloudflare Worker application. Opening `index.html` directly will not provide the NASA API routes.
+
+## Tests
 
 ```sh
 node tests/test-stats.cjs
@@ -39,4 +178,40 @@ node tests/test-feeds.cjs
 python tests/reference-check.py
 ```
 
-DOM tests require jsdom (`EARTHLENS_JSDOM_PATH` accepts an external installation). The Python reference test requires SciPy and statsmodels. Tests cover real NASA fixtures, incomplete years, units, cache dates, manual refresh, source outages, added coordinates, persistence, navigation, charts, import/export, and statistical references. Browser visual QA is unavailable in the managed build environment.
+The suite covers real NASA fixtures, incomplete years, unit changes, cache dates, source outages, persistence, import and export, and checks the statistics against SciPy and statsmodels. DOM tests need `jsdom`; the Python reference check needs SciPy and statsmodels.
+
+## Project structure
+
+```text
+app/api/nasa/        Server routes for POWER and GISTEMP
+server/nasa.mjs      Fixed NASA upstreams, validation, timeouts, caching
+public/app.js        Analysis controls, atlas, charts, verdicts
+public/stats.js      Trend estimators, uncertainty, significance, FDR
+public/feeds.js      NASA refresh workflow
+public/workspace.js  Saved projects, imports, exports
+public/assets/       Bundled NASA responses and provenance
+fetch_data.py        Reproducible snapshot refresh
+tests/               Statistical, data, UI and workspace checks
+```
+
+## Limits worth knowing
+
+- POWER values are **model grid-cell samples**, not station measurements or regional averages.
+- GISTEMP values are **broad zonal averages**, not local readings.
+- The app shows annual trends. It does **not** claim real-time conditions.
+- Statistical significance does not establish cause, practical importance or future change.
+
+## Acknowledgements
+
+- [NASA POWER](https://power.larc.nasa.gov/) and the MERRA-2 reanalysis, NASA Langley Research Center
+- [NASA GISS Surface Temperature Analysis (GISTEMP v4)](https://data.giss.nasa.gov/gistemp/)
+- [Natural Earth](https://www.naturalearthdata.com/) for map geometry
+- Newey & West (1987), Sen (1968), Benjamini & Hochberg (1995)
+
+EarthLens is an independent research tool. It is not affiliated with or endorsed by NASA.
+
+## Team
+
+<!-- Add your team name and members here -->
+
+Built for the **NASA Space Apps Challenge 2026**.
